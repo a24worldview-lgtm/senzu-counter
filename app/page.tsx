@@ -2,11 +2,11 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, onValue, runTransaction, set } from 'firebase/database';
+import { getDatabase, ref, onValue, runTransaction, set, DatabaseReference } from 'firebase/database';
 import { Send, Wifi, WifiOff, Users, XCircle, RefreshCw, Calendar, Settings, Plus, Trash2, X, Coffee } from 'lucide-react';
 
 // ============================================
-// Firebase設定（ここにあなたの設定を入れてください）
+// Firebase設定
 // ============================================
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -26,6 +26,29 @@ const database = getDatabase(app);
 const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || '';
 
 // ============================================
+// 型定義
+// ============================================
+interface CustomerData {
+  new: number;
+  repeat: number;
+}
+
+interface StaffDataItem {
+  treatment: CustomerData;
+  booking2w: CustomerData;
+  booking4w: CustomerData;
+}
+
+interface StaffDataMap {
+  [key: string]: StaffDataItem;
+}
+
+interface ShopData {
+  declined: number;
+  cancelled: number;
+}
+
+// ============================================
 // 定数定義
 // ============================================
 const DEFAULT_STAFF_LIST = ['新井', '津川', '岸本', '二谷', '中間'];
@@ -40,30 +63,39 @@ const getToday = () => new Date().toISOString().split('T')[0];
 // ============================================
 // アトミック更新関数（Firebase用）
 // ============================================
-const atomicIncrement = async (path, delta = 1) => {
-  const targetRef = ref(database, path);
+const atomicIncrement = async (path: string, delta: number = 1): Promise<{ success: boolean; error?: string }> => {
+  const targetRef: DatabaseReference = ref(database, path);
   try {
-    await runTransaction(targetRef, (currentValue) => {
+    await runTransaction(targetRef, (currentValue: number | null) => {
       const current = currentValue || 0;
       return Math.max(0, current + delta);
     });
     return { success: true };
   } catch (error) {
     console.error('Transaction failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 };
 
 // ============================================
 // カウンターボタン
 // ============================================
-const CounterButton = ({ value, colorClass, onIncrement, onDecrement, disabled, size = 'normal' }) => {
+interface CounterButtonProps {
+  value: number;
+  colorClass: string;
+  onIncrement: () => void;
+  onDecrement: () => void;
+  disabled: boolean;
+  size?: 'normal' | 'small';
+}
+
+const CounterButton: React.FC<CounterButtonProps> = ({ value, colorClass, onIncrement, onDecrement, disabled, size = 'normal' }) => {
   const [isPressing, setIsPressing] = useState(false);
-  const pressTimer = useRef(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTriggered = useRef(false);
   const isHandled = useRef(false);
 
-  const handlePressStart = useCallback((e) => {
+  const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (e.type === 'touchstart') e.preventDefault();
     if (isHandled.current) return;
     isHandled.current = true;
@@ -76,7 +108,7 @@ const CounterButton = ({ value, colorClass, onIncrement, onDecrement, disabled, 
     }, 500);
   }, [onDecrement]);
 
-  const handlePressEnd = useCallback((e) => {
+  const handlePressEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (e.type === 'touchend') e.preventDefault();
     if (pressTimer.current) clearTimeout(pressTimer.current);
     setIsPressing(false);
@@ -128,7 +160,16 @@ const CounterButton = ({ value, colorClass, onIncrement, onDecrement, disabled, 
 // ============================================
 // スタッフカード
 // ============================================
-const StaffCard = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
+interface StaffCardProps {
+  name: string;
+  data: StaffDataItem | undefined;
+  onUpdate: (staffName: string, category: string, customerKey: string, delta: number) => void;
+  onToggleOff: (name: string) => void;
+  isOff: boolean;
+  disabled: boolean;
+}
+
+const StaffCard: React.FC<StaffCardProps> = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
   const treatmentTotal = (data?.treatment?.new || 0) + (data?.treatment?.repeat || 0);
 
   if (isOff) {
@@ -174,7 +215,7 @@ const StaffCard = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
               <div key={c.key} className="flex flex-col items-center">
                 <span className="text-[8px] text-gray-500">{c.label}</span>
                 <CounterButton
-                  value={data?.treatment?.[c.key] || 0}
+                  value={data?.treatment?.[c.key as keyof CustomerData] || 0}
                   colorClass={c.color}
                   onIncrement={() => onUpdate(name, 'treatment', c.key, 1)}
                   onDecrement={() => onUpdate(name, 'treatment', c.key, -1)}
@@ -193,7 +234,7 @@ const StaffCard = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
               <div key={c.key} className="flex flex-col items-center">
                 <span className="text-[8px] text-gray-500">{c.label}</span>
                 <CounterButton
-                  value={data?.booking2w?.[c.key] || 0}
+                  value={data?.booking2w?.[c.key as keyof CustomerData] || 0}
                   colorClass={c.color}
                   onIncrement={() => onUpdate(name, 'booking2w', c.key, 1)}
                   onDecrement={() => onUpdate(name, 'booking2w', c.key, -1)}
@@ -212,7 +253,7 @@ const StaffCard = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
               <div key={c.key} className="flex flex-col items-center">
                 <span className="text-[8px] text-gray-500">{c.label}</span>
                 <CounterButton
-                  value={data?.booking4w?.[c.key] || 0}
+                  value={data?.booking4w?.[c.key as keyof CustomerData] || 0}
                   colorClass={c.color}
                   onIncrement={() => onUpdate(name, 'booking4w', c.key, 1)}
                   onDecrement={() => onUpdate(name, 'booking4w', c.key, -1)}
@@ -229,9 +270,17 @@ const StaffCard = ({ name, data, onUpdate, onToggleOff, isOff, disabled }) => {
 };
 
 // ============================================
-// サマリー（お断り・キャンセル含む）
+// サマリー
 // ============================================
-const DailySummary = ({ staffData, shopData, offStaff, onShopUpdate, disabled }) => {
+interface DailySummaryProps {
+  staffData: StaffDataMap;
+  shopData: ShopData;
+  offStaff: string[];
+  onShopUpdate: (counterKey: string, delta: number) => void;
+  disabled: boolean;
+}
+
+const DailySummary: React.FC<DailySummaryProps> = ({ staffData, shopData, offStaff, onShopUpdate, disabled }) => {
   let treatmentTotal = 0, treatmentNew = 0, treatmentRepeat = 0;
   let booking2wTotal = 0, booking4wTotal = 0;
 
@@ -301,7 +350,15 @@ const DailySummary = ({ staffData, shopData, offStaff, onShopUpdate, disabled })
 // ============================================
 // スタッフ管理モーダル
 // ============================================
-const StaffManageModal = ({ isOpen, onClose, staffList, onAddStaff, onRemoveStaff }) => {
+interface StaffManageModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  staffList: string[];
+  onAddStaff: (name: string) => void;
+  onRemoveStaff: (name: string) => void;
+}
+
+const StaffManageModal: React.FC<StaffManageModalProps> = ({ isOpen, onClose, staffList, onAddStaff, onRemoveStaff }) => {
   const [newName, setNewName] = useState('');
 
   if (!isOpen) return null;
@@ -360,7 +417,7 @@ const StaffManageModal = ({ isOpen, onClose, staffList, onAddStaff, onRemoveStaf
 };
 
 // ============================================
-// メインアプリ（Firebase連携版）
+// メインアプリ
 // ============================================
 export default function HeadSpaCounter() {
   const [selectedDate, setSelectedDate] = useState(getToday());
@@ -370,9 +427,9 @@ export default function HeadSpaCounter() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [staffList, setStaffList] = useState(DEFAULT_STAFF_LIST);
-  const [staffData, setStaffData] = useState({});
-  const [shopData, setShopData] = useState({ declined: 0, cancelled: 0 });
-  const [offStaff, setOffStaff] = useState([]);
+  const [staffData, setStaffData] = useState<StaffDataMap>({});
+  const [shopData, setShopData] = useState<ShopData>({ declined: 0, cancelled: 0 });
+  const [offStaff, setOffStaff] = useState<string[]>([]);
   const [confirmed, setConfirmed] = useState(false);
 
   // Firebase リアルタイム同期
@@ -387,8 +444,7 @@ export default function HeadSpaCounter() {
         setOffStaff(data.offStaff || []);
         setConfirmed(data.confirmed || false);
       } else {
-        // 初期データ
-        const initial = {};
+        const initial: StaffDataMap = {};
         staffList.forEach(name => {
           initial[name] = {
             treatment: { new: 0, repeat: 0 },
@@ -423,7 +479,7 @@ export default function HeadSpaCounter() {
   }, []);
 
   // 公休トグル
-  const handleToggleOff = async (name) => {
+  const handleToggleOff = async (name: string) => {
     const newOffStaff = offStaff.includes(name)
       ? offStaff.filter(n => n !== name)
       : [...offStaff, name];
@@ -432,22 +488,22 @@ export default function HeadSpaCounter() {
   };
 
   // スタッフ追加
-  const handleAddStaff = (name) => {
+  const handleAddStaff = (name: string) => {
     setStaffList(prev => [...prev, name]);
   };
 
   // スタッフ削除
-  const handleRemoveStaff = (name) => {
+  const handleRemoveStaff = (name: string) => {
     setStaffList(prev => prev.filter(n => n !== name));
   };
 
-  // カウント更新（Firebase）
-  const handleStaffUpdate = async (staffName, category, customerKey, delta) => {
+  // カウント更新
+  const handleStaffUpdate = async (staffName: string, category: string, customerKey: string, delta: number) => {
     const path = `senzu-counter/${selectedDate}/staffData/${staffName}/${category}/${customerKey}`;
     await atomicIncrement(path, delta);
   };
 
-  const handleShopUpdate = async (counterKey, delta) => {
+  const handleShopUpdate = async (counterKey: string, delta: number) => {
     const path = `senzu-counter/${selectedDate}/shopData/${counterKey}`;
     await atomicIncrement(path, delta);
   };
@@ -461,7 +517,6 @@ export default function HeadSpaCounter() {
     setIsSubmitting(true);
     
     try {
-      // GASに送信
       if (GAS_URL) {
         const payload = {
           date: selectedDate,
@@ -478,13 +533,12 @@ export default function HeadSpaCounter() {
         });
       }
       
-      // 確定フラグを保存
       await set(ref(database, `senzu-counter/${selectedDate}/confirmed`), true);
       
       alert('✅ スプレッドシートに送信しました！');
     } catch (error) {
       console.error('送信エラー:', error);
-      alert('❌ 送信に失敗しました: ' + error.message);
+      alert('❌ 送信に失敗しました: ' + (error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
