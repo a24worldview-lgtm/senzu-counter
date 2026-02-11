@@ -435,6 +435,17 @@ export default function HeadSpaCounter() {
   const [shopData, setShopData] = useState<ShopData>({ declined: 0, cancelled: 0 });
   const [offStaff, setOffStaff] = useState<string[]>([]);
   const [confirmed, setConfirmed] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationImage, setCelebrationImage] = useState('');
+
+  // お疲れ様画像のリスト（URLを差し替えてください）
+  const celebrationImages = [
+    'https://placehold.co/400x300/10b981/white?text=お疲れ様1',
+    'https://placehold.co/400x300/10b981/white?text=お疲れ様2',
+    'https://placehold.co/400x300/10b981/white?text=お疲れ様3',
+    'https://placehold.co/400x300/10b981/white?text=お疲れ様4',
+    'https://placehold.co/400x300/10b981/white?text=お疲れ様5',
+  ];
 
   // Firebase リアルタイム同期
   useEffect(() => {
@@ -539,7 +550,16 @@ export default function HeadSpaCounter() {
       
       await set(ref(database, `senzu-counter/${selectedDate}/confirmed`), true);
       
-      alert('✅ スプレッドシートに送信しました！');
+      // お疲れ様画像をランダム表示
+      const randomImage = celebrationImages[Math.floor(Math.random() * celebrationImages.length)];
+      setCelebrationImage(randomImage);
+      setShowCelebration(true);
+      
+      // 3秒後に自動で消える
+      setTimeout(() => {
+        setShowCelebration(false);
+      }, 3000);
+      
     } catch (error) {
       console.error('送信エラー:', error);
       alert('❌ 送信に失敗しました: ' + (error as Error).message);
@@ -673,6 +693,25 @@ export default function HeadSpaCounter() {
         onAddStaff={handleAddStaff}
         onRemoveStaff={handleRemoveStaff}
       />
+
+      {/* お疲れ様オーバーレイ */}
+      {showCelebration && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-fade-in"
+          onClick={() => setShowCelebration(false)}
+        >
+          <div className="text-center animate-scale-in">
+            <img 
+              src={celebrationImage} 
+              alt="お疲れ様でした！" 
+              className="max-w-[80vw] max-h-[60vh] rounded-2xl shadow-2xl"
+            />
+            <p className="text-white text-xl font-bold mt-4 drop-shadow-lg">
+              🎉 お疲れ様でした！ 🎉
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
