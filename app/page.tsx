@@ -324,24 +324,28 @@ const DailySummary: React.FC<DailySummaryProps> = ({ staffData, shopData, offSta
           <div className="text-base font-bold text-emerald-600">{bookingRate}%</div>
           <div className="text-[9px] text-gray-500">予約率</div>
         </div>
-        <button
-          onClick={() => onShopUpdate('declined', 1)}
-          onContextMenu={(e) => { e.preventDefault(); onShopUpdate('declined', -1); }}
-          disabled={disabled}
-          className="bg-red-500 hover:bg-red-600 rounded-lg p-1.5 shadow-sm active:scale-95 transition-all touch-none disabled:opacity-50"
-        >
-          <div className="text-base font-bold text-white">{shopData?.declined || 0}</div>
-          <div className="text-[9px] text-white text-opacity-80">お断り</div>
-        </button>
-        <button
-          onClick={() => onShopUpdate('cancelled', 1)}
-          onContextMenu={(e) => { e.preventDefault(); onShopUpdate('cancelled', -1); }}
-          disabled={disabled}
-          className="bg-gray-500 hover:bg-gray-600 rounded-lg p-1.5 shadow-sm active:scale-95 transition-all touch-none disabled:opacity-50"
-        >
-          <div className="text-base font-bold text-white">{shopData?.cancelled || 0}</div>
-          <div className="text-[9px] text-white text-opacity-80">キャンセル</div>
-        </button>
+        <div className="flex flex-col items-center">
+          <CounterButton
+            value={shopData?.declined || 0}
+            colorClass="bg-red-500 hover:bg-red-600"
+            onIncrement={() => onShopUpdate('declined', 1)}
+            onDecrement={() => onShopUpdate('declined', -1)}
+            disabled={disabled}
+            size="normal"
+          />
+          <div className="text-[9px] text-gray-500 mt-0.5">お断り</div>
+        </div>
+        <div className="flex flex-col items-center">
+          <CounterButton
+            value={shopData?.cancelled || 0}
+            colorClass="bg-gray-500 hover:bg-gray-600"
+            onIncrement={() => onShopUpdate('cancelled', 1)}
+            onDecrement={() => onShopUpdate('cancelled', -1)}
+            disabled={disabled}
+            size="normal"
+          />
+          <div className="text-[9px] text-gray-500 mt-0.5">キャンセル</div>
+        </div>
       </div>
     </div>
   );
