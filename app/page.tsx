@@ -646,8 +646,18 @@ export default function HeadSpaCounter() {
         </button>
 
         {confirmed && (
-          <div className="mt-2 bg-green-100 text-green-700 text-center py-2 rounded-xl text-xs">
-            ✅ 確定済み
+          <div className="mt-2 bg-green-100 text-green-700 text-center py-2 rounded-xl text-xs flex items-center justify-center gap-2">
+            <span>✅ 確定済み</span>
+            <button
+              onClick={async () => {
+                if (window.confirm('確定を解除して再編集しますか？')) {
+                  await set(ref(database, `senzu-counter/${selectedDate}/confirmed`), false);
+                }
+              }}
+              className="bg-white text-gray-600 px-2 py-1 rounded-lg text-xs hover:bg-gray-100"
+            >
+              解除して再編集
+            </button>
           </div>
         )}
       </main>
