@@ -440,11 +440,11 @@ export default function HeadSpaCounter() {
 
   // お疲れ様画像のリスト（URLを差し替えてください）
   const celebrationImages = [
-    'https://placehold.co/400x300/10b981/white?text=お疲れ様1',
-    'https://placehold.co/400x300/10b981/white?text=お疲れ様2',
-    'https://placehold.co/400x300/10b981/white?text=お疲れ様3',
-    'https://placehold.co/400x300/10b981/white?text=お疲れ様4',
-    'https://placehold.co/400x300/10b981/white?text=お疲れ様5',
+    'https://imgur.com/4lz8VS0',
+    'https://imgur.com/V4eaMzi',
+    'https://imgur.com/SpWgzJq',
+    'https://imgur.com/fuM1URC',
+    'https://imgur.com/k2fnU2T',
   ];
 
   // Firebase リアルタイム同期
