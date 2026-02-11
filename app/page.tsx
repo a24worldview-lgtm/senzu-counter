@@ -440,12 +440,12 @@ export default function HeadSpaCounter() {
 
   // お疲れ様画像のリスト（URLを差し替えてください）
   const celebrationImages = [
-    'https://imgur.com/4lz8VS0',
-    'https://imgur.com/V4eaMzi',
-    'https://imgur.com/SpWgzJq',
-    'https://imgur.com/fuM1URC',
-    'https://imgur.com/k2fnU2T',
-  ];
+  'https://i.imgur.com/4lz8VS0.jpg',
+  'https://i.imgur.com/V4eaMzi.jpg',
+  'https://i.imgur.com/SpWgzJq.jpg',
+  'https://i.imgur.com/fuM1URC.jpg',
+  'https://i.imgur.com/k2fnU2T.jpg',
+];
 
   // Firebase リアルタイム同期
   useEffect(() => {
