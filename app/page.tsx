@@ -3,8 +3,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase, ref, onValue, runTransaction, set, DatabaseReference } from 'firebase/database';
-// --- 認証用を追加 ---
-import { getAuth, signInAnonymously } from 'firebase/auth'; 
 import { Send, Wifi, WifiOff, Users, XCircle, RefreshCw, Calendar, Settings, Plus, Trash2, X, Coffee } from 'lucide-react';
 
 // ============================================
@@ -23,7 +21,6 @@ const firebaseConfig = {
 // Firebase初期化
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const database = getDatabase(app);
-const auth = getAuth(app); // 認証インスタンスを取得
 
 // GAS URL
 const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL || '';
@@ -449,17 +446,6 @@ export default function HeadSpaCounter() {
     'https://i.imgur.com/fuM1URC.jpg',
     'https://i.imgur.com/k2fnU2T.jpg',
   ];
-
-  // --- 修正箇所：起動時に自動ログイン ---
-  useEffect(() => {
-    signInAnonymously(auth)
-      .then(() => {
-        console.log('ログイン成功');
-      })
-      .catch((error) => {
-        console.error('ログインエラー:', error);
-      });
-  }, []);
 
   // Firebase リアルタイム同期
   useEffect(() => {
