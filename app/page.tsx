@@ -701,15 +701,12 @@ export default function HeadSpaCounter() {
           onClick={() => setShowCelebration(false)}
         >
           <div className="text-center animate-scale-in">
-            <img 
-              src={celebrationImage} 
-              alt="お疲れ様でした！" 
-              className="max-w-[80vw] max-h-[60vh] rounded-2xl shadow-2xl"
-            />
-            <p className="text-white text-xl font-bold mt-4 drop-shadow-lg">
-              🎉 お疲れ様でした！ 🎉
-            </p>
-          </div>
+  <img 
+    src={celebrationImage} 
+    alt="お疲れ様でした！" 
+    className="max-w-[80vw] max-h-[60vh] rounded-2xl shadow-2xl"
+  />
+</div>
         </div>
       )}
     </div>
