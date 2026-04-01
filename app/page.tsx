@@ -430,7 +430,8 @@ export default function HeadSpaCounter() {
   const [showSettings, setShowSettings] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [staffList, setStaffList] = useState(DEFAULT_STAFF_LIST);
+  const [staffList, setStaffList] = useState<string[]>([]);
+  const [staffListLoaded, setStaffListLoaded] = useState(false);
   const [staffData, setStaffData] = useState<StaffDataMap>({});
   const [shopData, setShopData] = useState<ShopData>({ declined: 0, cancelled: 0 });
   const [offStaff, setOffStaff] = useState<string[]>([]);
@@ -440,12 +441,32 @@ export default function HeadSpaCounter() {
 
   // お疲れ様画像のリスト（URLを差し替えてください）
   const celebrationImages = [
-  'https://i.imgur.com/4lz8VS0.jpg',
-  'https://i.imgur.com/V4eaMzi.jpg',
-  'https://i.imgur.com/SpWgzJq.jpg',
-  'https://i.imgur.com/fuM1URC.jpg',
-  'https://i.imgur.com/k2fnU2T.jpg',
-];
+    'https://i.imgur.com/4lz8VS0.jpg',
+    'https://i.imgur.com/V4eaMzi.jpg',
+    'https://i.imgur.com/SpWgzJq.jpg',
+    'https://i.imgur.com/fuM1URC.jpg',
+    'https://i.imgur.com/k2fnU2T.jpg',
+  ];
+
+  // スタッフリストをFirebaseから読み込み（初回のみ）
+  useEffect(() => {
+    const staffListRef = ref(database, 'senzu-counter/settings/staffList');
+    
+    const unsubscribe = onValue(staffListRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && Array.isArray(data)) {
+        setStaffList(data);
+      } else {
+        // 初回はデフォルトを設定してFirebaseに保存
+        const defaultList = ['新井', '津川', '岸本', '二谷', '中間'];
+        setStaffList(defaultList);
+        set(staffListRef, defaultList);
+      }
+      setStaffListLoaded(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Firebase リアルタイム同期
   useEffect(() => {
@@ -502,14 +523,18 @@ export default function HeadSpaCounter() {
     await set(ref(database, `senzu-counter/${selectedDate}/offStaff`), newOffStaff);
   };
 
-  // スタッフ追加
-  const handleAddStaff = (name: string) => {
-    setStaffList(prev => [...prev, name]);
+  // スタッフ追加（Firebaseに保存）
+  const handleAddStaff = async (name: string) => {
+    const newList = [...staffList, name];
+    setStaffList(newList);
+    await set(ref(database, 'senzu-counter/settings/staffList'), newList);
   };
 
-  // スタッフ削除
-  const handleRemoveStaff = (name: string) => {
-    setStaffList(prev => prev.filter(n => n !== name));
+  // スタッフ削除（Firebaseに保存）
+  const handleRemoveStaff = async (name: string) => {
+    const newList = staffList.filter(n => n !== name);
+    setStaffList(newList);
+    await set(ref(database, 'senzu-counter/settings/staffList'), newList);
   };
 
   // カウント更新
@@ -567,6 +592,15 @@ export default function HeadSpaCounter() {
       setIsSubmitting(false);
     }
   };
+
+  // スタッフリストが読み込まれるまでローディング表示
+  if (!staffListLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center">
+        <div className="text-emerald-600 text-lg">読み込み中...</div>
+      </div>
+    );
+  }
 
   const workingStaff = staffList.filter(name => !offStaff.includes(name));
   const restingStaff = staffList.filter(name => offStaff.includes(name));
@@ -701,12 +735,15 @@ export default function HeadSpaCounter() {
           onClick={() => setShowCelebration(false)}
         >
           <div className="text-center animate-scale-in">
-  <img 
-    src={celebrationImage} 
-    alt="お疲れ様でした！" 
-    className="max-w-[80vw] max-h-[60vh] rounded-2xl shadow-2xl"
-  />
-</div>
+            <img 
+              src={celebrationImage} 
+              alt="お疲れ様でした！" 
+              className="max-w-[80vw] max-h-[60vh] rounded-2xl shadow-2xl"
+            />
+            <p className="text-white text-xl font-bold mt-4 drop-shadow-lg">
+              🎉 お疲れ様でした！ 🎉
+            </p>
+          </div>
         </div>
       )}
     </div>
