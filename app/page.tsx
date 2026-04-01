@@ -358,8 +358,8 @@ interface StaffManageModalProps {
   isOpen: boolean;
   onClose: () => void;
   staffList: string[];
-  onAddStaff: (name: string) => void;
-  onRemoveStaff: (name: string) => void;
+  onAddStaff: (name: string) => Promise<void>;
+  onRemoveStaff: (name: string) => Promise<void>;
 }
 
 const StaffManageModal: React.FC<StaffManageModalProps> = ({ isOpen, onClose, staffList, onAddStaff, onRemoveStaff }) => {
@@ -367,11 +367,15 @@ const StaffManageModal: React.FC<StaffManageModalProps> = ({ isOpen, onClose, st
 
   if (!isOpen) return null;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newName.trim() && !staffList.includes(newName.trim())) {
-      onAddStaff(newName.trim());
+      await onAddStaff(newName.trim());
       setNewName('');
     }
+  };
+
+  const handleRemove = async (name: string) => {
+    await onRemoveStaff(name);
   };
 
   return (
@@ -389,7 +393,7 @@ const StaffManageModal: React.FC<StaffManageModalProps> = ({ isOpen, onClose, st
             <div key={name} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
               <span>{name}</span>
               <button
-                onClick={() => onRemoveStaff(name)}
+                onClick={() => handleRemove(name)}
                 className="text-red-500 hover:bg-red-50 p-1 rounded"
               >
                 <Trash2 className="w-4 h-4" />
